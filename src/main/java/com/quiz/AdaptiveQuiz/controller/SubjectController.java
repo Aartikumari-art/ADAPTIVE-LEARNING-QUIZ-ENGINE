@@ -46,7 +46,7 @@ public class SubjectController {
                 return ResponseEntity.notFound().build();
             }
 
-            // Explicitly delete children to avoid 500 Constraint Violation
+           
             // (JPA Cascade should handle this, but explicit delete is safer for existing
             // bad state)
             List<com.quiz.AdaptiveQuiz.entity.QuizAttempt> attempts = quizAttemptRepo.findBySubject(subject);

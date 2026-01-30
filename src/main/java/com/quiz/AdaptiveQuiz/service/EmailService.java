@@ -18,7 +18,7 @@ public class EmailService {
         String subject = "Email Verification - Adaptive Quiz App";
         String verificationUrl = frontendUrl + "/verify-email?email=" + toEmail + "&token=" + token;
 
-        // Note: The /verify-email route on frontend (port 5173) will handle the call to
+        // The /verify-email route on frontend (port 5173) will handle the call to
         // backend
 
         String messageComp = "Thank you for registering. Please click the link below to verify your email:\n"

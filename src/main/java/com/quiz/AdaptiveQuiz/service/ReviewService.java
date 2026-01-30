@@ -38,11 +38,11 @@ public class ReviewService {
 
         return responses.stream()
                 .map(r -> new ReviewDTO(
-                        r.getQuestionText(),        // ✅ direct field
-                        r.getSelectedAnswer(),      // ✅ direct field
-                        r.getCorrectAnswer(),       // ✅ direct field
-                        r.isCorrect(),              // ✅ direct field
-                        r.getDifficulty().name()    // ✅ enum
+                        r.getQuestionText(),        // direct field
+                        r.getSelectedAnswer(),      // direct field
+                        r.getCorrectAnswer(),       // direct field
+                        r.isCorrect(),              // direct field
+                        r.getDifficulty().name()    // enum
                 ))
                 .collect(Collectors.toList());
     }

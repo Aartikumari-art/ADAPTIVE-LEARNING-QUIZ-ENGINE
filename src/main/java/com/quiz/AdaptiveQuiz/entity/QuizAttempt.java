@@ -19,7 +19,7 @@ public class QuizAttempt {
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
-    // ⭐ REQUIRED FOR ADAPTIVE LOGIC
+    // REQUIRED FOR ADAPTIVE LOGIC
     @Enumerated(EnumType.STRING)
     @Column(name = "current_difficulty", nullable = false)
     private Difficulty currentDifficulty;
@@ -58,7 +58,7 @@ public class QuizAttempt {
         this.subject = subject;
     }
 
-    // 🔥 THIS WAS MISSING
+    
     public Difficulty getCurrentDifficulty() {
         return currentDifficulty;
     }

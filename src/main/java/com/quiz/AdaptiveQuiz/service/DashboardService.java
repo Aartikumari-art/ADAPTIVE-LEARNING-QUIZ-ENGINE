@@ -36,13 +36,13 @@ public class DashboardService {
                 if (email == null)
                         throw new RuntimeException("Email is required");
 
-                // ✅ Total quizzes
+                // Total quizzes
                 List<QuizAttempt> attempts = quizAttemptRepository.findAll();
                 int totalQuizzes = (int) attempts.stream()
                                 .filter(a -> a.getUser() != null && email.equals(a.getUser().getEmail()))
                                 .count();
 
-                // ✅ Correct & Wrong answers
+                // Correct & Wrong answers
                 List<UserResponse> responses = userResponseRepository.findAll();
 
                 int totalCorrect = (int) responses.stream()
@@ -69,7 +69,7 @@ public class DashboardService {
                                 ? 50
                                 : (int) snapshots.get(snapshots.size() - 1).getSkillScore();
 
-                // ✅ Per-Subject Analytics
+                // Per-Subject Analytics
                 java.util.Map<com.quiz.AdaptiveQuiz.entity.Subject, java.util.List<QuizAttempt>> attemptsBySubject = attempts
                                 .stream()
                                 .filter(a -> a.getUser() != null && email.equals(a.getUser().getEmail()))
@@ -126,7 +126,7 @@ public class DashboardService {
 
                 // Map<String, SkillSnapshot> latestUserSnapshot
                 // This is complex to do efficiently without custom queries.
-                // Let's use a simple approach: Group by User in Java.
+                //  use a simple approach: Group by User in Java.
 
                 java.util.Map<String, SkillSnapshot> userLatestSnapshot = new java.util.HashMap<>();
                 for (SkillSnapshot s : allSnapshots) {

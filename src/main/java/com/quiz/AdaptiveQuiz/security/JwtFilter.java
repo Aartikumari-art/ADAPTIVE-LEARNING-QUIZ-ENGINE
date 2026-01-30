@@ -66,8 +66,8 @@ public class JwtFilter extends OncePerRequestFilter {
                     }
                 }
             } catch (Exception e) {
-                // ❌ DO NOT block
-                // ❌ DO NOT set response status
+                // DO NOT block
+                // DO NOT set response status
                 System.out.println("JWT ERROR: " + e.getMessage());
             }
         }
