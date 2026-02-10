@@ -44,13 +44,14 @@ public class AdaptiveLogicService {
     // ==================================
     public void saveSkillSnapshot(
             User user,
+            com.quiz.AdaptiveQuiz.entity.Subject subject,
             int correctAnswers,
             int totalQuestions) {
 
         double accuracy = (double) correctAnswers / totalQuestions;
 
-        // Fetch previous snapshots using email
-        List<SkillSnapshot> snapshots = skillSnapshotRepository.findByUser_Email(user.getEmail());
+        // Fetch previous snapshots for THIS subject
+        List<SkillSnapshot> snapshots = skillSnapshotRepository.findByUserAndSubjectOrderByTimestampAsc(user, subject);
 
         int oldSkill = snapshots.isEmpty()
                 ? 50
@@ -67,6 +68,7 @@ public class AdaptiveLogicService {
 
         SkillSnapshot snapshot = new SkillSnapshot();
         snapshot.setUser(user);
+        snapshot.setSubject(subject);
         snapshot.setSkillScore(newSkill);
 
         skillSnapshotRepository.save(snapshot);

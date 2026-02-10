@@ -29,6 +29,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try {
             com.quiz.AdaptiveQuiz.entity.User user = userRepository.findById(id).orElse(null);

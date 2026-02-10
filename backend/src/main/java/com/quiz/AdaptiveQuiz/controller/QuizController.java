@@ -72,12 +72,24 @@ public class QuizController {
                 quizService.getResult(attemptId));
     }
 
-    // ================= REVIEW =================
     @GetMapping("/review/{attemptId}")
     public ResponseEntity<List<UserResponse>> getReview(
             @PathVariable Long attemptId) {
 
         return ResponseEntity.ok(
                 quizService.getReview(attemptId));
+    }
+
+    // ================= STATUS (TIMER SYNC) =================
+    @GetMapping("/status/{attemptId}")
+    public ResponseEntity<?> getQuizStatus(@PathVariable Long attemptId) {
+        return ResponseEntity.ok(quizService.getQuizStatus(attemptId));
+    }
+
+    // ================= DISCONNECT/TIMEOUT =================
+    @PostMapping("/finish/{attemptId}")
+    public ResponseEntity<?> finishQuiz(@PathVariable Long attemptId) {
+        quizService.finishQuiz(attemptId);
+        return ResponseEntity.ok().build();
     }
 }

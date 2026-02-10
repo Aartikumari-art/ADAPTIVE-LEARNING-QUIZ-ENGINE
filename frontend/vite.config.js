@@ -6,5 +6,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     allowedHosts: ['192.168.56.1.nip.io']
-  }
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.js',
+  },
 })

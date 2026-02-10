@@ -42,6 +42,10 @@ public class QuizAttempt {
         return attemptId;
     }
 
+    public void setAttemptId(Long attemptId) {
+        this.attemptId = attemptId;
+    }
+
     public User getUser() {
         return user;
     }
@@ -58,7 +62,6 @@ public class QuizAttempt {
         this.subject = subject;
     }
 
-    
     public Difficulty getCurrentDifficulty() {
         return currentDifficulty;
     }

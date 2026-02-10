@@ -117,49 +117,62 @@ public class DashboardService {
         }
 
         public List<com.quiz.AdaptiveQuiz.dto.LeaderboardDTO> getLeaderboard() {
-                // Get all unique users from attempts involves more queries, for now let's
-                // iterate all attempts
-                // Better: Get all users and calc stats.
-
-                // Simplified: Fetch all snapshots, group by user, take latest.
                 List<SkillSnapshot> allSnapshots = skillSnapshotRepository.findAll();
 
-                // Map<String, SkillSnapshot> latestUserSnapshot
-                // This is complex to do efficiently without custom queries.
-                //  use a simple approach: Group by User in Java.
+                // Group by User -> Subject -> Latest Snapshot
+                java.util.Map<String, java.util.Map<String, SkillSnapshot>> userSubjectSnapshots = new java.util.HashMap<>();
 
-                java.util.Map<String, SkillSnapshot> userLatestSnapshot = new java.util.HashMap<>();
                 for (SkillSnapshot s : allSnapshots) {
-                        if (s.getUser() == null)
+                        if (s.getUser() == null || s.getSubject() == null)
                                 continue;
+
                         String email = s.getUser().getEmail();
-                        if (!userLatestSnapshot.containsKey(email)
-                                        || s.getTimestamp().isAfter(userLatestSnapshot.get(email).getTimestamp())) {
-                                userLatestSnapshot.put(email, s);
+                        String subject = s.getSubject().getName();
+
+                        userSubjectSnapshots.putIfAbsent(email, new java.util.HashMap<>());
+                        java.util.Map<String, SkillSnapshot> subjectMap = userSubjectSnapshots.get(email);
+
+                        if (!subjectMap.containsKey(subject)
+                                        || s.getTimestamp().isAfter(subjectMap.get(subject).getTimestamp())) {
+                                subjectMap.put(subject, s);
                         }
                 }
 
                 List<com.quiz.AdaptiveQuiz.dto.LeaderboardDTO> leaderboard = new java.util.ArrayList<>();
                 int rank = 1;
 
-                // Sort by Skill Score Descending
-                List<SkillSnapshot> sorted = new java.util.ArrayList<>(userLatestSnapshot.values());
-                sorted.sort((a, b) -> Double.compare(b.getSkillScore(), a.getSkillScore()));
+                for (String email : userSubjectSnapshots.keySet()) {
+                        java.util.Map<String, SkillSnapshot> subjectMap = userSubjectSnapshots.get(email);
 
-                for (SkillSnapshot s : sorted) {
-                        // Get quizzes count
-                        String email = s.getUser().getEmail();
+                        // Calculate Average Skill
+                        double totalSkill = 0;
+                        for (SkillSnapshot s : subjectMap.values()) {
+                                totalSkill += s.getSkillScore();
+                        }
+                        int avgSkill = subjectMap.isEmpty() ? 0 : (int) (totalSkill / subjectMap.size());
+
+                        // Get User Name (from any snapshot)
+                        String name = subjectMap.values().iterator().next().getUser().getName();
+
+                        // Quizzes Taken (Expensive but necessary for now)
                         long quizzesTaken = quizAttemptRepository.findAll().stream()
                                         .filter(a -> a.getUser() != null && email.equals(a.getUser().getEmail()))
                                         .count();
 
                         leaderboard.add(new com.quiz.AdaptiveQuiz.dto.LeaderboardDTO(
-                                        rank++,
-                                        s.getUser().getName(),
-                                        (int) s.getSkillScore(),
+                                        0, // Rank set later
+                                        name,
+                                        avgSkill,
                                         (int) quizzesTaken,
-                                        0.0 // Accuracy calculation is too expensive here, skipping for now
-                        ));
+                                        0.0));
+                }
+
+                // Sort by Skill Score Descending
+                leaderboard.sort((a, b) -> Integer.compare(b.getSkillScore(), a.getSkillScore()));
+
+                // Assign Ranks
+                for (int i = 0; i < leaderboard.size(); i++) {
+                        leaderboard.get(i).setRank(i + 1);
                 }
 
                 return leaderboard;

@@ -15,48 +15,50 @@ import com.quiz.AdaptiveQuiz.security.JwtFilter;
 @Configuration
 public class SecurityConfig {
 
-    private final JwtFilter jwtFilter;
-    private final com.quiz.AdaptiveQuiz.security.OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-    private final com.quiz.AdaptiveQuiz.security.HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
+        private final JwtFilter jwtFilter;
+        private final com.quiz.AdaptiveQuiz.security.OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+        private final com.quiz.AdaptiveQuiz.security.HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
-    public SecurityConfig(JwtFilter jwtFilter,
-            com.quiz.AdaptiveQuiz.security.OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
-            com.quiz.AdaptiveQuiz.security.HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository) {
-        this.jwtFilter = jwtFilter;
-        this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
-        this.cookieAuthorizationRequestRepository = cookieAuthorizationRequestRepository;
-    }
+        public SecurityConfig(JwtFilter jwtFilter,
+                        com.quiz.AdaptiveQuiz.security.OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
+                        com.quiz.AdaptiveQuiz.security.HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository) {
+                this.jwtFilter = jwtFilter;
+                this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
+                this.cookieAuthorizationRequestRepository = cookieAuthorizationRequestRepository;
+        }
 
-    // ✅ MAIN SECURITY CONFIG
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // ✅ MAIN SECURITY CONFIG
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        http
-                // CSRF not needed for JWT
-                .csrf(csrf -> csrf.disable())
+                http
+                                // CSRF not needed for JWT
+                                .csrf(csrf -> csrf.disable())
 
-                // Enable CORS (uses your CorsConfig)
-                .cors(Customizer.withDefaults())
+                                // Enable CORS (uses your CorsConfig)
+                                .cors(Customizer.withDefaults())
 
-                // Session Management (Removed STATELESS to allow OAuth2 session)
-                // .sessionManagement(session ->
-                // session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                // Session Management (Removed STATELESS to allow OAuth2 session)
+                                // .sessionManagement(session ->
+                                // session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Authorization rules
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/quiz/**").authenticated()
-                        .anyRequest().permitAll())
+                                // Authorization rules
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers("/api/auth/**").permitAll()
+                                                .requestMatchers("/api/quiz/**").authenticated()
+                                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                                                .anyRequest().permitAll())
 
-                // JWT filter
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                                // JWT filter
+                                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // OAuth2 Login
-                .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(
-                                a -> a.authorizationRequestRepository(cookieAuthorizationRequestRepository))
-                        .successHandler(oAuth2LoginSuccessHandler));
+                                // OAuth2 Login
+                                .oauth2Login(oauth2 -> oauth2
+                                                .authorizationEndpoint(
+                                                                a -> a.authorizationRequestRepository(
+                                                                                cookieAuthorizationRequestRepository))
+                                                .successHandler(oAuth2LoginSuccessHandler));
 
-        return http.build();
-    }
+                return http.build();
+        }
 }

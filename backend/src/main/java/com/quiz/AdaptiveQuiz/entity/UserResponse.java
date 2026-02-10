@@ -17,10 +17,10 @@ public class UserResponse {
     @Column(name = "question_text", columnDefinition = "TEXT", nullable = false)
     private String questionText;
 
-    @Column(name = "selected_answer", nullable = false)
+    @Column(name = "selected_answer", columnDefinition = "TEXT", nullable = false)
     private String selectedAnswer;
 
-    @Column(name = "correct_answer", nullable = false)
+    @Column(name = "correct_answer", columnDefinition = "TEXT", nullable = false)
     private String correctAnswer;
 
     @Enumerated(EnumType.STRING)

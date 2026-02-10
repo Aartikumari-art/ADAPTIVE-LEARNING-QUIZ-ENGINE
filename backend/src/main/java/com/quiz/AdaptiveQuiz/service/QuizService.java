@@ -20,6 +20,7 @@ public class QuizService {
         private final com.quiz.AdaptiveQuiz.repository.SkillSnapshotRepository skillRepo;
         private final SubjectRepository subjectRepo;
         private final com.quiz.AdaptiveQuiz.repository.QuestionRepository questionRepo; // Ensure this is available
+        private final AdaptiveLogicService adaptiveLogicService;
 
         public QuizService(
                         QuizAttemptRepository attemptRepo,
@@ -28,7 +29,8 @@ public class QuizService {
                         OpenAIService openAIService,
                         com.quiz.AdaptiveQuiz.repository.SkillSnapshotRepository skillRepo,
                         SubjectRepository subjectRepo,
-                        com.quiz.AdaptiveQuiz.repository.QuestionRepository questionRepo) {
+                        com.quiz.AdaptiveQuiz.repository.QuestionRepository questionRepo,
+                        AdaptiveLogicService adaptiveLogicService) {
 
                 this.attemptRepo = attemptRepo;
                 this.responseRepo = responseRepo;
@@ -37,6 +39,7 @@ public class QuizService {
                 this.skillRepo = skillRepo;
                 this.subjectRepo = subjectRepo;
                 this.questionRepo = questionRepo;
+                this.adaptiveLogicService = adaptiveLogicService;
         }
 
         // ================= START QUIZ =================
@@ -57,6 +60,7 @@ public class QuizService {
                 attempt.setWrongAnswers(0);
                 attempt.setSkippedAnswers(0);
                 attempt.setAccuracy(0);
+                attempt.setStartTime(java.time.LocalDateTime.now());
 
                 // ✅ THIS IS THE MISSING LINE
                 attempt.setCurrentDifficulty(Difficulty.MEDIUM);
@@ -152,22 +156,14 @@ public class QuizService {
 
                 if (isCorrect) {
                         attempt.setCorrectAnswers(attempt.getCorrectAnswers() + 1);
-                        // Increase difficulty
-                        if (current == Difficulty.EASY)
-                                next = Difficulty.MEDIUM;
-                        else if (current == Difficulty.MEDIUM)
-                                next = Difficulty.HARD;
+                        next = adaptiveLogicService.nextDifficulty(current, true);
                 } else {
                         if (isSkipped) {
                                 attempt.setSkippedAnswers(attempt.getSkippedAnswers() + 1);
+                                next = current; // No change for skipped
                         } else {
                                 attempt.setWrongAnswers(attempt.getWrongAnswers() + 1);
-
-                                // Decrease difficulty ONLY if not skipped (redundant check but safe)
-                                if (current == Difficulty.HARD)
-                                        next = Difficulty.MEDIUM;
-                                else if (current == Difficulty.MEDIUM)
-                                        next = Difficulty.EASY;
+                                next = adaptiveLogicService.nextDifficulty(current, false);
                         }
                 }
 
@@ -198,15 +194,18 @@ public class QuizService {
                         return null;
                 }
 
-                // Fetch previous questions to avoid duplicates
-                List<UserResponse> previousResponses = responseRepo.findByAttempt(attempt);
-                List<String> previousQuestions = previousResponses.stream()
-                                .map(UserResponse::getQuestionText)
+                // Fetch FULL history to avoid duplicates across all attempts
+                List<String> previousQuestions = responseRepo.findDistinctQuestionTextByUserAndSubject(
+                                attempt.getUser().getId(),
+                                attempt.getSubject().getId());
+
+                // Normalize for comparison
+                previousQuestions = previousQuestions.stream()
                                 .map(String::trim)
                                 .map(String::toLowerCase)
-                                .toList();
+                                .collect(java.util.stream.Collectors.toList());
 
-                for (int i = 0; i < 5; i++) { // Try 5 times to get a unique question
+                for (int i = 0; i < 3; i++) { // Try 3 times (reduced from 5 to avoid rate limits)
                         try {
                                 AIQuestion question = openAIService.generateQuestion(
                                                 attempt.getSubject(),
@@ -234,24 +233,11 @@ public class QuizService {
         }
 
         private void saveSkillSnapshot(QuizAttempt attempt) {
-                // Simple Skill Logic: Accuracy + bonus for Hard difficulty
-                double baseScore = attempt.getAccuracy();
-
-                // Fetch difficulty distribution to weight the score
-                // For simplicity, if they ended on HARD, give 1.2x multiplier, MEDIUM 1.0x,
-                // EASY 0.8x
-                double multiplier = 1.0;
-                if (attempt.getCurrentDifficulty() == Difficulty.HARD)
-                        multiplier = 1.2;
-                if (attempt.getCurrentDifficulty() == Difficulty.EASY)
-                        multiplier = 0.8;
-
-                double finalSkill = baseScore * multiplier;
-                if (finalSkill > 100)
-                        finalSkill = 100;
-
-                SkillSnapshot snapshot = new SkillSnapshot(attempt.getUser(), attempt.getSubject(), finalSkill);
-                skillRepo.save(snapshot);
+                adaptiveLogicService.saveSkillSnapshot(
+                                attempt.getUser(),
+                                attempt.getSubject(),
+                                attempt.getCorrectAnswers(),
+                                attempt.getTotalQuestions());
         }
 
         // ================= ACCURACY =================
@@ -280,9 +266,44 @@ public class QuizService {
 
         // ================= REVIEW =================
         public List<UserResponse> getReview(Long attemptId) {
-
                 QuizAttempt attempt = attemptRepo.findById(attemptId).orElseThrow();
-
                 return responseRepo.findByAttempt(attempt);
+        }
+
+        public java.util.Map<String, Object> getQuizStatus(Long attemptId) {
+                QuizAttempt attempt = attemptRepo.findById(attemptId)
+                                .orElseThrow(() -> new RuntimeException("Attempt not found"));
+
+                long elapsed = java.time.Duration.between(attempt.getStartTime(), java.time.LocalDateTime.now())
+                                .toSeconds();
+                long remaining = 900 - elapsed; // 15 minutes = 900 seconds
+
+                if (remaining < 0)
+                        remaining = 0;
+
+                return java.util.Map.of(
+                                "startTime", attempt.getStartTime().toString(),
+                                "remainingSeconds", remaining);
+        }
+
+        @Transactional
+        public void finishQuiz(Long attemptId) {
+                QuizAttempt attempt = attemptRepo.findById(attemptId)
+                                .orElseThrow(() -> new RuntimeException("Attempt not found"));
+
+                int completed = attempt.getCorrectAnswers() + attempt.getWrongAnswers() + attempt.getSkippedAnswers();
+                int remaining = attempt.getTotalQuestions() - completed;
+
+                if (remaining > 0) {
+                        attempt.setSkippedAnswers(attempt.getSkippedAnswers() + remaining);
+                }
+
+                // Finalize logic
+                calculateAccuracy(attempt);
+                saveSkillSnapshot(attempt);
+
+                // Mark as finished if we had an endTime field, but currently we rely on total
+                // questions being accounted for.
+                attemptRepo.save(attempt);
         }
 }

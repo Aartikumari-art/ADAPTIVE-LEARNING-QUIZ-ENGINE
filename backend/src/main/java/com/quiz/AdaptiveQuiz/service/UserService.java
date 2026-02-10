@@ -29,7 +29,7 @@ public class UserService {
             String email,
             String password) {
 
-        if (!com.quiz.AdaptiveQuiz.util.EmailValidator.isValidEmailDomain(email)) {
+        if (!isValidEmailDomain(email)) {
             throw new RuntimeException("Invalid email domain. Cannot receive emails.");
         }
 
@@ -115,5 +115,9 @@ public class UserService {
         repo.save(user);
 
         return user;
+    }
+
+    protected boolean isValidEmailDomain(String email) {
+        return com.quiz.AdaptiveQuiz.util.EmailValidator.isValidEmailDomain(email);
     }
 }

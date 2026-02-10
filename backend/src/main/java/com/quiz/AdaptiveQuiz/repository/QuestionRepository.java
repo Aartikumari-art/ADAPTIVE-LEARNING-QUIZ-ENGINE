@@ -15,6 +15,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     // For Seeding
     boolean existsBySubjectAndDifficulty(Subject subject, Difficulty difficulty);
 
+    long countBySubjectAndDifficulty(Subject subject, Difficulty difficulty);
+
     // For Fallback (Native Query for Randomness)
     // Note: In DB, column is subject_id, and enum is stored as string
     @Query(value = "SELECT * FROM questions q WHERE q.subject_id = :#{#subject.id} AND q.difficulty = :#{#difficulty.name()} ORDER BY RAND() LIMIT 1", nativeQuery = true)

@@ -16,10 +16,10 @@ public class Question {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "question_options", joinColumns = @JoinColumn(name = "question_id"))
-    @Column(name = "option_text")
+    @Column(name = "option_text", columnDefinition = "TEXT")
     private List<String> options;
 
-    @Column(nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String correctAnswer;
 
     @ManyToOne

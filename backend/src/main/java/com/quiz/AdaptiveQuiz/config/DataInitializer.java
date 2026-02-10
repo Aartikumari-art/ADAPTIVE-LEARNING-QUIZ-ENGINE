@@ -60,37 +60,46 @@ public class DataInitializer {
     }
 
     private void seedQuestions(Subject subject, QuestionRepository questionRepo) {
-        // EASY
-        if (!questionRepo.existsBySubjectAndDifficulty(subject, Difficulty.EASY)) {
-            Question q = new Question();
-            q.setContent("Basic " + subject.getName() + " question (EASY). What is it?");
-            q.setSubject(subject);
-            q.setDifficulty(Difficulty.EASY);
-            q.setOptions(List.of("Option A", "Option B", "Option C", "Option D"));
-            q.setCorrectAnswer("Option A");
-            questionRepo.save(q);
+        // EASY - Seed 3 Questions
+        if (questionRepo.countBySubjectAndDifficulty(subject, Difficulty.EASY) < 3) {
+            createQuestion(questionRepo, subject, Difficulty.EASY,
+                    "Basic " + subject.getName() + " concept? ", "A", List.of("A", "B", "C", "D"));
+            createQuestion(questionRepo, subject, Difficulty.EASY,
+                    "Intro to " + subject.getName() + " syntax? ", "B", List.of("A", "B", "C", "D"));
+            createQuestion(questionRepo, subject, Difficulty.EASY,
+                    "Simple " + subject.getName() + " definition? ", "C", List.of("A", "B", "C", "D"));
         }
 
-        // MEDIUM
-        if (!questionRepo.existsBySubjectAndDifficulty(subject, Difficulty.MEDIUM)) {
-            Question q = new Question();
-            q.setContent("Intermediate " + subject.getName() + " question (MEDIUM). Explain?");
-            q.setSubject(subject);
-            q.setDifficulty(Difficulty.MEDIUM);
-            q.setOptions(List.of("Option A", "Option B", "Option C", "Option D"));
-            q.setCorrectAnswer("Option B");
-            questionRepo.save(q);
+        // MEDIUM - Seed 3 Questions
+        if (questionRepo.countBySubjectAndDifficulty(subject, Difficulty.MEDIUM) < 3) {
+            createQuestion(questionRepo, subject, Difficulty.MEDIUM,
+                    "Intermediate " + subject.getName() + " logic? ", "B", List.of("X", "Y", "Z", "W"));
+            createQuestion(questionRepo, subject, Difficulty.MEDIUM,
+                    "Common " + subject.getName() + " pattern? ", "C", List.of("P", "Q", "R", "S"));
+            createQuestion(questionRepo, subject, Difficulty.MEDIUM,
+                    "Explain " + subject.getName() + " lifecycle? ", "A", List.of("1", "2", "3", "4"));
         }
 
-        // HARD
-        if (!questionRepo.existsBySubjectAndDifficulty(subject, Difficulty.HARD)) {
-            Question q = new Question();
-            q.setContent("Advanced " + subject.getName() + " question (HARD). Analyze?");
-            q.setSubject(subject);
-            q.setDifficulty(Difficulty.HARD);
-            q.setOptions(List.of("Option A", "Option B", "Option C", "Option D"));
-            q.setCorrectAnswer("Option C");
-            questionRepo.save(q);
+        // HARD - Seed 3 Questions
+        if (questionRepo.countBySubjectAndDifficulty(subject, Difficulty.HARD) < 3) {
+            createQuestion(questionRepo, subject, Difficulty.HARD,
+                    "Advanced " + subject.getName() + " optimization? ", "D", List.of("Ops1", "Ops2", "Ops3", "Ops4"));
+            createQuestion(questionRepo, subject, Difficulty.HARD,
+                    "Deep dive " + subject.getName() + " internals? ", "A", List.of("Core", "Shell", "Kernel", "None"));
+            createQuestion(questionRepo, subject, Difficulty.HARD,
+                    "Complex " + subject.getName() + " architecture? ", "B",
+                    List.of("Mono", "Micro", "Serverless", "Hybrid"));
         }
+    }
+
+    private void createQuestion(QuestionRepository repo, Subject sub, Difficulty diff, String content, String ans,
+            List<String> opts) {
+        Question q = new Question();
+        q.setSubject(sub);
+        q.setDifficulty(diff);
+        q.setContent(content);
+        q.setCorrectAnswer(ans);
+        q.setOptions(opts);
+        repo.save(q);
     }
 }
